@@ -6,7 +6,8 @@ add_library(
         SHARED
         pty.cpp
         terminal.cpp
-        exec.cpp)
+        process.cpp
+        bridge.cpp)
 
 find_library(
         log-lib
@@ -14,4 +15,5 @@ find_library(
 
 target_link_libraries(
         ubuntucli
-        ${log-lib})
+        ${log-lib}
+        util)
