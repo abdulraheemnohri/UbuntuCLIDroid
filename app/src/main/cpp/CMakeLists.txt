@@ -7,12 +7,11 @@ add_library(
         pty.cpp
         terminal.cpp
         process.cpp
-        bridge.cpp)
+        jni_bridge.cpp)
 
-find_library(
-        log-lib
-        log)
+find_library(log-lib log)
 
 target_link_libraries(
         ubuntucli
-        ${log-lib})
+        ${log-lib}
+        util)

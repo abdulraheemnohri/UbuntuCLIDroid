@@ -29,7 +29,6 @@ import com.ubuntucli.`package`.PackageManager
 import com.ubuntucli.core.SystemInitializer
 import com.ubuntucli.filemanager.FileManager
 import com.ubuntucli.settings.SettingsManager
-import com.ubuntucli.plugin.PluginManager
 import java.io.File
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -45,18 +44,59 @@ class MainActivity : ComponentActivity() {
             val vm: TerminalViewModel = viewModel()
             var currentScreen by remember { mutableStateOf("terminal") }
             var isInitialized by remember { mutableStateOf(initializer.isInitialized()) }
-            var initStatus by remember { mutableStateOf("Checking system...") }
+            var initStatus by remember { mutableStateOf("Checking DNA layer...") }
+            var hasError by remember { mutableStateOf(false) }
             val scope = rememberCoroutineScope()
 
             Theme {
                 if (!isInitialized) {
-                    InitializationScreen(initStatus)
-                    LaunchedEffect(Unit) {
-                        scope.launch {
-                            initializer.initialize { status ->
-                                initStatus = status
-                                if (status == "System Ready.") {
+                    Column(
+                        modifier = Modifier.fillMaxSize().background(Color.Black).padding(16.dp),
+                        verticalArrangement = Arrangement.Center,
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        if (!hasError) {
+                            CircularProgressIndicator(color = Color.Green)
+                        } else {
+                            Icon(Icons.Default.Error, null, tint = Color.Red, modifier = Modifier.size(48.dp))
+                        }
+                        Spacer(Modifier.height(16.dp))
+                        Text("UbuntuCLI Droid", style = MaterialTheme.typography.headlineMedium, color = Color.Green)
+                        Spacer(Modifier.height(8.dp))
+                        Text(
+                            text = initStatus,
+                            color = if (hasError) Color.Red else Color.White,
+                            fontFamily = FontFamily.Monospace,
+                            fontSize = 12.sp
+                        )
+
+                        if (hasError) {
+                            Spacer(Modifier.height(24.dp))
+                            Button(onClick = {
+                                hasError = false
+                                initStatus = "Retrying DNA check..."
+                                scope.launch {
+                                    try {
+                                        initializer.initialize { initStatus = it }
+                                        isInitialized = true
+                                    } catch (e: Exception) {
+                                        hasError = true
+                                        initStatus = "Error: ${e.message}"
+                                    }
+                                }
+                            }) {
+                                Text("Retry Initialization")
+                            }
+                        }
+
+                        LaunchedEffect(Unit) {
+                            if (!isInitialized) {
+                                try {
+                                    initializer.initialize { initStatus = it }
                                     isInitialized = true
+                                } catch (e: Exception) {
+                                    hasError = true
+                                    initStatus = "Error: ${e.message}"
                                 }
                             }
                         }
@@ -69,75 +109,33 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-@Composable
-fun InitializationScreen(status: String) {
-    Column(
-        modifier = Modifier.fillMaxSize().background(Color.Black),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        CircularProgressIndicator(color = Color.Green)
-        Spacer(Modifier.height(24.dp))
-        Text("UbuntuCLI Droid", style = MaterialTheme.typography.headlineMedium, color = Color.Green)
-        Text("Booting DNA Layer...", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
-        Spacer(Modifier.height(16.dp))
-        Text(status, color = Color.White, fontFamily = FontFamily.Monospace)
-    }
-}
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainScaffold(currentScreen: String, onScreenChange: (String) -> Unit, vm: TerminalViewModel, context: Context) {
     Scaffold(
-        topBar = {
-            CenterAlignedTopAppBar(title = { Text("UbuntuCLI Droid") })
-        },
         bottomBar = {
             NavigationBar {
-                NavigationBarItem(
-                    icon = { Icon(Icons.Default.Terminal, "Term") },
-                    label = { Text("Terminal") },
-                    selected = currentScreen == "terminal",
-                    onClick = { onScreenChange("terminal") }
-                )
-                NavigationBarItem(
-                    icon = { Icon(Icons.Default.Inventory, "Pkg") },
-                    label = { Text("Packages") },
-                    selected = currentScreen == "packages",
-                    onClick = { onScreenChange("packages") }
-                )
-                NavigationBarItem(
-                    icon = { Icon(Icons.Default.Extension, "Plugin") },
-                    label = { Text("Plugins") },
-                    selected = currentScreen == "plugins",
-                    onClick = { onScreenChange("plugins") }
-                )
-                NavigationBarItem(
-                    icon = { Icon(Icons.Default.Folder, "Files") },
-                    label = { Text("Files") },
-                    selected = currentScreen == "files",
-                    onClick = { onScreenChange("files") }
-                )
-                NavigationBarItem(
-                    icon = { Icon(Icons.Default.MonitorHeart, "Mon") },
-                    label = { Text("Monitor") },
-                    selected = currentScreen == "monitor",
-                    onClick = { onScreenChange("monitor") }
-                )
-                NavigationBarItem(
-                    icon = { Icon(Icons.Default.Settings, "Set") },
-                    label = { Text("Settings") },
-                    selected = currentScreen == "settings",
-                    onClick = { onScreenChange("settings") }
-                )
+                listOf(
+                    Triple("terminal", Icons.Default.Terminal, "Term"),
+                    Triple("packages", Icons.Default.Inventory, "Pkgs"),
+                    Triple("files", Icons.Default.Folder, "Files"),
+                    Triple("monitor", Icons.Default.MonitorHeart, "Mon"),
+                    Triple("settings", Icons.Default.Settings, "Set")
+                ).forEach { (id, icon, label) ->
+                    NavigationBarItem(
+                        icon = { Icon(icon, label) },
+                        label = { Text(label) },
+                        selected = currentScreen == id,
+                        onClick = { onScreenChange(id) }
+                    )
+                }
             }
         }
     ) { innerPadding ->
         Box(modifier = Modifier.padding(innerPadding)) {
             when (currentScreen) {
                 "terminal" -> TerminalView(vm)
-                "packages" -> PackagesScreen(vm, onScreenChange)
-                "plugins" -> PluginsScreen(vm, onScreenChange, context)
+                "packages" -> PackagesScreen(vm)
                 "files" -> FilesScreen()
                 "monitor" -> MonitorScreen()
                 "settings" -> SettingsScreen(context)
@@ -147,54 +145,17 @@ fun MainScaffold(currentScreen: String, onScreenChange: (String) -> Unit, vm: Te
 }
 
 @Composable
-fun PackagesScreen(vm: TerminalViewModel, onScreenChange: (String) -> Unit) {
+fun PackagesScreen(vm: TerminalViewModel) {
     val pm = remember { PackageManager() }
-    val pkgs = pm.getPopularPackages()
-
     LazyColumn(modifier = Modifier.fillMaxSize().padding(16.dp)) {
-        item {
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text("Package Manager", style = MaterialTheme.typography.headlineMedium)
-                Button(onClick = {
-                    vm.sendCommand(0, pm.getAptUpdateCmd())
-                    onScreenChange("terminal")
-                }) { Text("Update") }
-            }
-        }
-        items(pkgs) { pkg ->
+        item { Text("Package Manager", style = MaterialTheme.typography.headlineMedium) }
+        items(pm.getPopularPackages()) { pkg ->
             ListItem(
                 headlineContent = { Text(pkg) },
                 trailingContent = {
-                    Button(onClick = {
-                        vm.sendCommand(0, pm.getAptInstallCmd(pkg))
-                        onScreenChange("terminal")
-                    }) {
+                    Button(onClick = { vm.sendCommand(0, pm.getAptInstallCmd(pkg)) }) {
                         Text("Install")
                     }
-                }
-            )
-        }
-    }
-}
-
-@Composable
-fun PluginsScreen(vm: TerminalViewModel, onScreenChange: (String) -> Unit, context: Context) {
-    val pm = remember { PluginManager() }
-    val plugins = pm.loadPlugins(File(context.filesDir, "ubuntu/root/plugins").absolutePath)
-
-    LazyColumn(modifier = Modifier.fillMaxSize().padding(16.dp)) {
-        item { Text("Plugins", style = MaterialTheme.typography.headlineMedium) }
-        if (plugins.isEmpty()) {
-            item { Text("No plugins found in /root/plugins", color = Color.Gray) }
-        }
-        items(plugins) { plugin ->
-            ListItem(
-                headlineContent = { Text(plugin.name) },
-                trailingContent = {
-                    Button(onClick = {
-                        vm.sendCommand(0, "bash ${plugin.path}")
-                        onScreenChange("terminal")
-                    }) { Text("Run") }
                 }
             )
         }
@@ -208,13 +169,11 @@ fun FilesScreen() {
     val files = remember(currentPath) { fm.listFiles(currentPath) }
 
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-            Text("Path: $currentPath", style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
-            IconButton(onClick = {
-                if (currentPath != "/") currentPath = File(currentPath).parent ?: "/"
-            }) {
-                Icon(Icons.Default.ArrowUpward, "Up")
+        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            IconButton(onClick = { if (currentPath != "/") currentPath = File(currentPath).parent ?: "/" }) {
+                Icon(Icons.Default.ArrowBack, null)
             }
+            Text("Path: $currentPath", style = MaterialTheme.typography.titleMedium)
         }
         Divider()
         LazyColumn {
@@ -223,14 +182,7 @@ fun FilesScreen() {
                     headlineContent = { Text(file.name) },
                     supportingContent = { Text(if (file.isDirectory) "Directory" else "${file.length()} bytes") },
                     leadingContent = { Icon(if (file.isDirectory) Icons.Default.Folder else Icons.Default.InsertDriveFile, null) },
-                    trailingContent = {
-                        IconButton(onClick = { fm.deleteFile(file.absolutePath) }) {
-                            Icon(Icons.Default.Delete, "Delete", tint = Color.Red)
-                        }
-                    },
-                    modifier = Modifier.clickable {
-                        if (file.isDirectory) currentPath = file.absolutePath
-                    }
+                    modifier = Modifier.clickable { if (file.isDirectory) currentPath = file.absolutePath }
                 )
             }
         }
@@ -258,15 +210,11 @@ fun MonitorScreen() {
         Text("System Monitor", style = MaterialTheme.typography.headlineMedium)
         Spacer(Modifier.height(8.dp))
         Text("Memory: Total ${mem.first / 1024} MB, Avail ${mem.second / 1024} MB", fontSize = 12.sp)
-
         Spacer(Modifier.height(16.dp))
         Text("Running Processes:", style = MaterialTheme.typography.titleSmall)
         LazyColumn(modifier = Modifier.weight(1f)) {
             items(processes) { proc ->
-                Row(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text("${proc.pid} ${proc.name}", fontSize = 11.sp, fontFamily = FontFamily.Monospace, modifier = Modifier.weight(1f))
-                    Text("S: ${proc.state} T: ${proc.threads}", fontSize = 11.sp, fontFamily = FontFamily.Monospace)
-                }
+                Text("${proc.pid} ${proc.name} [${proc.state}]", fontSize = 10.sp, fontFamily = FontFamily.Monospace)
             }
         }
     }
@@ -278,18 +226,15 @@ fun SettingsScreen(context: Context) {
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
         Text("Settings", style = MaterialTheme.typography.headlineMedium)
         Spacer(Modifier.height(16.dp))
-        ListItem(
-            headlineContent = { Text("Font Size") },
-            trailingContent = { Text(sm.fontSize.value.toString()) },
-            modifier = Modifier.clickable { sm.updateFontSize(sm.fontSize.value + 1) }
-        )
-        ListItem(
-            headlineContent = { Text("Terminal Theme") },
-            trailingContent = { Text(sm.theme.value) }
-        )
-        ListItem(
-            headlineContent = { Text("PIN Lock") },
-            trailingContent = { Switch(sm.pinEnabled.value, onCheckedChange = { sm.updatePinEnabled(it) }) }
-        )
+        ListItem(headlineContent = { Text("Font Size") }, trailingContent = {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                IconButton(onClick = { sm.updateFontSize(sm.fontSize.value - 1) }) { Icon(Icons.Default.Remove, null) }
+                Text(sm.fontSize.value.toString())
+                IconButton(onClick = { sm.updateFontSize(sm.fontSize.value + 1) }) { Icon(Icons.Default.Add, null) }
+            }
+        })
+        ListItem(headlineContent = { Text("Default Shell") }, trailingContent = { Text(sm.defaultShell.value) })
+        ListItem(headlineContent = { Text("Scrollback Size") }, trailingContent = { Text(sm.scrollbackSize.value.toString()) })
+        ListItem(headlineContent = { Text("PIN Lock") }, trailingContent = { Switch(sm.pinLockEnabled.value, onCheckedChange = { sm.updatePinLockEnabled(it) }) })
     }
 }
