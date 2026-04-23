@@ -115,20 +115,36 @@ fun MainScaffold(currentScreen: String, onScreenChange: (String) -> Unit, vm: Te
     Scaffold(
         bottomBar = {
             NavigationBar {
-                listOf(
-                    Triple("terminal", Icons.Default.Terminal, "Term"),
-                    Triple("packages", Icons.Default.Inventory, "Pkgs"),
-                    Triple("files", Icons.Default.Folder, "Files"),
-                    Triple("monitor", Icons.Default.MonitorHeart, "Mon"),
-                    Triple("settings", Icons.Default.Settings, "Set")
-                ).forEach { (id, icon, label) ->
-                    NavigationBarItem(
-                        icon = { Icon(icon, label) },
-                        label = { Text(label) },
-                        selected = currentScreen == id,
-                        onClick = { onScreenChange(id) }
-                    )
-                }
+                NavigationBarItem(
+                    icon = { Icon(Icons.Default.Terminal, "Term") },
+                    label = { Text("Terminal") },
+                    selected = currentScreen == "terminal",
+                    onClick = { onScreenChange("terminal") }
+                )
+                NavigationBarItem(
+                    icon = { Icon(Icons.Default.Inventory, "Pkgs") },
+                    label = { Text("Packages") },
+                    selected = currentScreen == "packages",
+                    onClick = { onScreenChange("packages") }
+                )
+                NavigationBarItem(
+                    icon = { Icon(Icons.Default.Folder, "Files") },
+                    label = { Text("Files") },
+                    selected = currentScreen == "files",
+                    onClick = { onScreenChange("files") }
+                )
+                NavigationBarItem(
+                    icon = { Icon(Icons.Default.MonitorHeart, "Mon") },
+                    label = { Text("Monitor") },
+                    selected = currentScreen == "monitor",
+                    onClick = { onScreenChange("monitor") }
+                )
+                NavigationBarItem(
+                    icon = { Icon(Icons.Default.Settings, "Set") },
+                    label = { Text("Settings") },
+                    selected = currentScreen == "settings",
+                    onClick = { onScreenChange("settings") }
+                )
             }
         }
     ) { innerPadding ->
@@ -165,15 +181,31 @@ fun PackagesScreen(vm: TerminalViewModel) {
 @Composable
 fun FilesScreen() {
     val fm = remember { FileManager() }
-    var currentPath by remember { mutableStateOf("/") }
-    val files = remember(currentPath) { fm.listFiles(currentPath) }
+    var path by remember { mutableStateOf("/") }
+    val files = remember(path) { fm.listFiles(path) }
+    var showDialog by remember { mutableStateOf(false) }
+    var newDirName by remember { mutableStateOf("") }
+
+    if (showDialog) {
+        AlertDialog(
+            onDismissRequest = { showDialog = false },
+            title = { Text("New Folder") },
+            text = { TextField(value = newDirName, onValueChange = { newDirName = it }) },
+            confirmButton = {
+                Button(onClick = { showDialog = false }) { Text("Create") }
+            }
+        )
+    }
 
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = { if (currentPath != "/") currentPath = File(currentPath).parent ?: "/" }) {
+            IconButton(onClick = { if (path != "/") path = File(path).parent ?: "/" }) {
                 Icon(Icons.Default.ArrowBack, null)
             }
-            Text("Path: $currentPath", style = MaterialTheme.typography.titleMedium)
+            Text("Path: $path", style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
+            IconButton(onClick = { showDialog = true }) {
+                Icon(Icons.Default.CreateNewFolder, null)
+            }
         }
         Divider()
         LazyColumn {
@@ -182,7 +214,7 @@ fun FilesScreen() {
                     headlineContent = { Text(file.name) },
                     supportingContent = { Text(if (file.isDirectory) "Directory" else "${file.length()} bytes") },
                     leadingContent = { Icon(if (file.isDirectory) Icons.Default.Folder else Icons.Default.InsertDriveFile, null) },
-                    modifier = Modifier.clickable { if (file.isDirectory) currentPath = file.absolutePath }
+                    modifier = Modifier.clickable { if (file.isDirectory) path = file.absolutePath }
                 )
             }
         }
@@ -234,7 +266,5 @@ fun SettingsScreen(context: Context) {
             }
         })
         ListItem(headlineContent = { Text("Default Shell") }, trailingContent = { Text(sm.defaultShell.value) })
-        ListItem(headlineContent = { Text("Scrollback Size") }, trailingContent = { Text(sm.scrollbackSize.value.toString()) })
-        ListItem(headlineContent = { Text("PIN Lock") }, trailingContent = { Switch(sm.pinLockEnabled.value, onCheckedChange = { sm.updatePinLockEnabled(it) }) })
     }
 }

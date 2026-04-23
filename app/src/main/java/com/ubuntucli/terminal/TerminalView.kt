@@ -10,10 +10,7 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ContentPaste
-import androidx.compose.material.icons.filled.DeleteSweep
-import androidx.compose.material.icons.filled.VerticalSplit
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -39,8 +36,16 @@ fun TerminalView(vm: TerminalViewModel) {
     }
 
     Column(modifier = Modifier.fillMaxSize().background(Color.Black)) {
-        Row(modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surface), verticalAlignment = Alignment.CenterVertically) {
-            ScrollableTabRow(selectedTabIndex = selectedSessionId, edgePadding = 0.dp, modifier = Modifier.weight(1f), containerColor = Color.Transparent) {
+        Row(
+            modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surface),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            ScrollableTabRow(
+                selectedTabIndex = selectedSessionId,
+                edgePadding = 0.dp,
+                modifier = Modifier.weight(1f),
+                containerColor = Color.Transparent
+            ) {
                 vm.sessions.forEachIndexed { index, session ->
                     Tab(
                         selected = selectedSessionId == index,
@@ -118,9 +123,16 @@ fun TerminalSessionScreen(session: TerminalSession, vm: TerminalViewModel) {
         }
 
         VirtualKeys { key ->
-            if (key == "TAB") session.write("\t")
-            else if (key == "CTRL-C") session.write("\u0003")
-            else session.write(key)
+            when (key) {
+                "TAB" -> session.write("\t")
+                "CTRL-C" -> session.write("\u0003")
+                "UP" -> session.write("\u001B[A")
+                "DOWN" -> session.write("\u001B[B")
+                "LEFT" -> session.write("\u001B[D")
+                "RIGHT" -> session.write("\u001B[C")
+                "ESC" -> session.write("\u001B")
+                else -> session.write(key)
+            }
         }
 
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -145,14 +157,27 @@ fun TerminalSessionScreen(session: TerminalSession, vm: TerminalViewModel) {
 
 @Composable
 fun VirtualKeys(onKey: (String) -> Unit) {
-    Row(modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp), horizontalArrangement = Arrangement.SpaceEvenly) {
-        listOf("CTRL-C", "TAB", "ESC", "-", "/", "|", "..").forEach { key ->
-            TextButton(
-                onClick = { onKey(key) },
-                contentPadding = PaddingValues(0.dp),
-                modifier = Modifier.height(28.dp).width(48.dp)
-            ) {
-                Text(key, fontSize = 9.sp, color = Color.Gray)
+    Column {
+        Row(modifier = Modifier.fillMaxWidth().padding(vertical = 1.dp), horizontalArrangement = Arrangement.SpaceEvenly) {
+            listOf("CTRL-C", "ESC", "TAB", "UP", "DOWN", "LEFT", "RIGHT").forEach { key ->
+                TextButton(
+                    onClick = { onKey(key) },
+                    contentPadding = PaddingValues(0.dp),
+                    modifier = Modifier.height(28.dp).width(48.dp)
+                ) {
+                    Text(key, fontSize = 8.sp, color = Color.Gray)
+                }
+            }
+        }
+        Row(modifier = Modifier.fillMaxWidth().padding(vertical = 1.dp), horizontalArrangement = Arrangement.SpaceEvenly) {
+            listOf("-", "/", "|", "..", ".", "*", "~").forEach { key ->
+                TextButton(
+                    onClick = { onKey(key) },
+                    contentPadding = PaddingValues(0.dp),
+                    modifier = Modifier.height(28.dp).width(48.dp)
+                ) {
+                    Text(key, fontSize = 9.sp, color = Color.Green)
+                }
             }
         }
     }
