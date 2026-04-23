@@ -23,7 +23,6 @@ Java_com_ubuntucli_ShellSession_createPty(JNIEnv* env, jobject thiz, jstring she
     if (pid < 0) return -1;
 
     if (pid == 0) {
-        // Child process
         close(ptm);
         setsid();
         if (ioctl(pts, TIOCSCTTY, 0) < 0) exit(1);
@@ -32,11 +31,13 @@ Java_com_ubuntucli_ShellSession_createPty(JNIEnv* env, jobject thiz, jstring she
         dup2(pts, 2);
         if (pts > 2) close(pts);
 
-        // TODO: Exec Ubuntu shell
-        execl("/system/bin/sh", "/system/bin/sh", "-", (char *)NULL);
+        // Convert shell_path and args to char* arrays
+        const char *c_shell_path = env->GetStringUTFChars(shell_path, NULL);
+
+        // Simplified arg handling for this generation
+        execl(c_shell_path, c_shell_path, "-", (char *)NULL);
         exit(1);
     } else {
-        // Parent process
         close(pts);
         jint* pids = env->GetIntArrayElements(pProcessId, NULL);
         pids[0] = pid;
