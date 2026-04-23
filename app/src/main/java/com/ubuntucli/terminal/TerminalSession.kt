@@ -68,6 +68,12 @@ class TerminalSession(val id: Int) {
         } catch (e: Exception) {}
     }
 
+    fun sendCtrlKey(key: Char) {
+        val ctrlKey = (key.uppercaseChar().code - 'A'.code + 1).toByte()
+        outputStream?.write(byteArrayOf(ctrlKey))
+        outputStream?.flush()
+    }
+
     fun updateSize(rows: Int, cols: Int) {
         if (ptyFd != -1) setPtyWindowSize(ptyFd, rows, cols)
     }

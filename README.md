@@ -1,49 +1,49 @@
 # UbuntuCLI Droid
 
-🚀 **UbuntuCLI Droid** is a high-performance terminal emulator and Ubuntu Linux environment for Android. It provides a production-grade experience for developers, running a real Ubuntu rootfs via `proot`.
+🚀 **UbuntuCLI Droid** is a high-performance terminal emulator and Ubuntu Linux environment for Android. It is designed as a professional developer workstation, providing a real Ubuntu rootfs via `proot` with a modern, feature-rich interface.
 
-## ✨ Key Features
+## ✨ Production Features
 
-- **🐧 Ubuntu Environment**: Full ARM64 Ubuntu support without root access.
-- **🖥️ Advanced Terminal**: PTY-based interactive shell with multi-tab support.
-- **📦 Package Management**: Integrated UI for `apt` operations and package discovery.
-- **📂 File Manager**: Browse and manage `/root`, `/sdcard`, and system paths.
-- **🔌 Plugin System**: Auto-loading shell-based plugins for extensibility.
-- **📊 System Monitor**: Real-time CPU and Memory tracking within the app.
-- **🎨 Modern UI**: Built with Jetpack Compose, supporting hacker-themed aesthetics.
+- **🐧 Minimal Ubuntu Stack**: Pre-configured Ubuntu 20.04 LTS (ARM64) with optimized sources and DNS.
+- **🖥️ Pro Terminal**:
+  - PTY-based interactive shell.
+  - **Multi-tab** and **Split-screen** support.
+  - Virtual keys (Ctrl, Alt, Tab, Esc).
+  - Persistence of session history.
+- **📦 Package Management**: Full `apt` support with a dedicated management UI.
+- **🔌 Plugin Engine**: Auto-loading bash scripts from `/root/plugins`.
+- **📂 File System Bridge**: Integrated file explorer for `/root`, `/sdcard`, and system paths.
+- **📊 System Monitoring**: Real-time CPU, RAM, and process viewer (Htop Lite).
+- **🎨 Customization**: Persisted settings for font size, themes, and more.
+- **🔐 Secure Foundation**: Sandboxed execution, optional biometric/PIN lock.
 
-## 🏗️ Tech Stack
-- **Kotlin & Jetpack Compose**: Modern Android frontend.
-- **C++ (NDK)**: Native Pseudo-terminal (PTY) and process management.
-- **proot**: User-space implementation of `chroot`, `mount`, and `id`.
+## 🏗️ Technical Architecture
+- **Native**: C++ NDK implementation of `forkpty` and process management.
+- **UI**: 100% Jetpack Compose for a fast, modern Material3 experience.
+- **Runtime**: `proot` for user-space implementation of `chroot` and bind mounts.
 
-## 🚀 Getting Started
+## 🚀 Setup & Build
 
-### Prerequisites
-- Android Studio Jellyfish or later.
-- Android NDK and CMake installed via SDK Manager.
+### Requirements
+- Android SDK 24+
+- Android NDK & CMake
+- ARM64 hardware
 
 ### Building
-1. Clone the repository.
-2. Open in Android Studio.
-3. Sync Gradle and build the `:app` module.
-4. Run on an ARM64 Android device.
+```bash
+./gradlew assembleDebug
+```
 
-### Initial Setup
-1. Open the Terminal tab.
-2. Run `bash scripts/install.sh` to download and extract the Ubuntu rootfs.
-3. Use `bash scripts/start.sh` to enter the environment.
+### Initial Launch
+1. Launch the app and wait for the **Booting DNA Layer** initialization.
+2. The app will extract the optimized rootfs and apply default configurations.
+3. Once ready, you'll be dropped into a real Ubuntu bash shell.
 
-## 📁 Project Layout
-- `app/src/main/cpp`: Native PTY and JNI logic.
-- `app/src/main/java/com/ubuntucli`: Core application logic and UI.
-- `scripts/`: Essential environment management scripts.
-- `core/`: Architectural foundations for terminal and sessions.
-
-## 🔐 Security
-- Fully sandboxed execution.
-- No root permissions required for core operations.
-- Optional PIN and biometric lock for app access.
+## 📁 Project Structure
+- `app/src/main/cpp`: High-performance PTY layer.
+- `app/src/main/java/com/ubuntucli`: Clean, modular Kotlin logic.
+- `app/src/main/assets`: Ubuntu "DNA" (rootfs + default configs).
+- `.github/workflows`: CI for automated APK delivery.
 
 ---
-*Built for the portable developer workstation of the future.*
+*Built for the next generation of mobile Linux power users.*
