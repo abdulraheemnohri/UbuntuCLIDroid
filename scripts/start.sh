@@ -1,5 +1,5 @@
 #!/bin/bash
-# Ubuntu Droid Startup Script
+# UbuntuCLI Droid Bootloader
 
 INSTALL_DIR="$HOME/ubuntu"
 
@@ -9,7 +9,6 @@ proot \
     --bind=/proc \
     --bind=/sys \
     --bind=/sdcard \
-    --bind=/storage \
     /usr/bin/env -i \
     HOME=/root \
     TERM=xterm-256color \
