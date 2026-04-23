@@ -13,5 +13,4 @@ find_library(log-lib log)
 
 target_link_libraries(
         ubuntucli
-        ${log-lib}
-        util)
+        ${log-lib})

@@ -1,39 +1,37 @@
 # UbuntuCLI Droid
 
-🚀 **UbuntuCLI Droid** is a professional, modern terminal emulator and Linux environment for Android. It provides a production-grade developer workstation on your mobile device, running a real Ubuntu rootfs (ARM64) via `proot`.
+🚀 **UbuntuCLI Droid** is a high-performance terminal emulator and Linux environment for Android. It provides a real Ubuntu rootfs (ARM64) running via `proot`, enabling a production-grade developer workstation on your mobile device.
 
 ## ✨ Key Features
 
-- **🐧 Minimal Ubuntu Stack**: Pre-configured Ubuntu 22.04 LTS (ARM64) environment.
-- **🖥️ Pro Terminal Engine**: PTY-based shell with multi-tab and split-screen support.
-- **📦 Package Manager**: Integrated UI for `apt` operations and package discovery.
-- **📂 File Bridge**: Advanced file explorer for `/root`, `/sdcard`, and system paths.
-- **📊 System Monitoring**: Real-time CPU, RAM, and process tracking.
-- **🔌 Plugin System**: Auto-loading shell-based plugins for extensibility.
-- **🎨 Modern UI**: Built with 100% Jetpack Compose and Material 3.
+- **🐧 Minimal Ubuntu System**: Pre-configured Ubuntu 20.04 LTS environment with optimized network and environment layers.
+- **🖥️ Pro Terminal Engine**: PTY-based shell with multi-tab, **split-screen** support, and virtual keys (Arrows, ESC, TAB).
+- **📦 Package Management**: Integrated UI and CLI for `apt` operations and package discovery.
+- **📂 File Manager**: Advanced file explorer for `/root`, `/sdcard`, and system paths with navigation and management.
+- **📊 System Monitor**: Real-time CPU, Memory, and Process tracking.
+- **🔌 Plugin System**: Auto-loading shell-based plugins for custom extensibility.
+- **🎨 Modern UI**: Built with 100% Jetpack Compose and Material 3 design principles.
 
 ## 🏗️ Technical Architecture
 
-- **Native**: C++ NDK implementation of `forkpty` and process management.
-- **UI**: Clean, modular Kotlin logic with ViewModel persistence.
-- **Runtime**: `proot` for user-space root emulation (no root required).
-- **CI/CD**: Automated GitHub Actions workflow for Debug APK generation.
+- **Native Layer**: C++ NDK implementation of `forkpty` and process management for maximum efficiency.
+- **Frontend**: Clean, modular Kotlin logic with ViewModel persistence and gesture support.
+- **Runtime**: `proot` for user-space root emulation (no root required), ensuring safety and compatibility.
+- **DNA Layer**: Automatic initialization, integrity verification, and self-healing system setup.
 
 ## 🚀 Getting Started
 
 ### Prerequisites
-- Android Studio Jellyfish or later.
-- Android NDK & CMake.
+- Android device (ARM64).
+- Android SDK 24+ support.
 
-### Building
+### Build Instructions
 ```bash
 ./gradlew assembleDebug
 ```
 
-### Setup
-1. Launch the app and wait for the **DNA Layer** initialization.
-2. The app will extract the optimized rootfs and apply default configurations.
-3. Once ready, use the terminal to install tools via `apt`.
+### First Launch
+Launch the application and wait for the **Booting DNA Layer** initialization to complete. Once the "System Ready" message appears, you'll be dropped into a real Ubuntu bash shell. Use `apt install <package>` to add your favorite tools.
 
 ---
-*Built for the next generation of mobile Linux power users.*
+*Built for the portable developer workstation of the future.*
