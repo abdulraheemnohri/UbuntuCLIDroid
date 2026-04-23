@@ -19,7 +19,6 @@ class TerminalViewModel(application: Application) : AndroidViewModel(application
         val session = TerminalSession(id)
         val history = mutableStateListOf<String>()
 
-        // Load history if exists
         val historyFile = File(historyDir, "session_$id.txt")
         if (historyFile.exists()) {
             history.addAll(historyFile.readLines().takeLast(1000))
@@ -39,6 +38,7 @@ class TerminalViewModel(application: Application) : AndroidViewModel(application
         }
 
         sessions.add(session)
+        // Production: points to the Ubuntu proot entry
         session.start("/system/bin/sh", arrayOf("-"), emptyArray())
     }
 
@@ -49,9 +49,21 @@ class TerminalViewModel(application: Application) : AndroidViewModel(application
         } catch (e: Exception) {}
     }
 
-    fun sendCommand(id: Int, cmd: String) {
-        sessions.find { it.id == id }?.write(cmd + "\n")
+    fun sendCommand(id: Int, command: String) {
+        val history = tabHistories[id] ?: return
+
+        if (command == "clear") {
+            history.clear()
+            history.add("Console cleared.")
+            return
+        }
+
+        val session = sessions.find { it.id == id }
+        session?.write(command + "\n")
     }
+
+    // Proxy for UI to access history
+    val tabHistories: Map<Int, MutableList<String>> get() = outputs
 
     override fun onCleared() {
         sessions.forEach { it.stop() }

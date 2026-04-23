@@ -8,7 +8,9 @@ class SettingsManager(context: Context) {
 
     var fontSize = mutableStateOf(prefs.getInt("font_size", 12))
     var theme = mutableStateOf(prefs.getString("theme", "Dracula") ?: "Dracula")
-    var pinEnabled = mutableStateOf(prefs.getBoolean("pin_enabled", false))
+    var pinLockEnabled = mutableStateOf(prefs.getBoolean("pin_lock", false))
+    var defaultShell = mutableStateOf(prefs.getString("default_shell", "/bin/bash") ?: "/bin/bash")
+    var scrollbackSize = mutableStateOf(prefs.getInt("scrollback_size", 10000))
 
     fun updateFontSize(newSize: Int) {
         fontSize.value = newSize
@@ -20,8 +22,18 @@ class SettingsManager(context: Context) {
         prefs.edit().putString("theme", newTheme).apply()
     }
 
-    fun updatePinEnabled(enabled: Boolean) {
-        pinEnabled.value = enabled
-        prefs.edit().putBoolean("pin_enabled", enabled).apply()
+    fun updateDefaultShell(shell: String) {
+        defaultShell.value = shell
+        prefs.edit().putString("default_shell", shell).apply()
+    }
+
+    fun updateScrollbackSize(size: Int) {
+        scrollbackSize.value = size
+        prefs.edit().putInt("scrollback_size", size).apply()
+    }
+
+    fun updatePinLockEnabled(enabled: Boolean) {
+        pinLockEnabled.value = enabled
+        prefs.edit().putBoolean("pin_lock", enabled).apply()
     }
 }
