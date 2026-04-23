@@ -11,9 +11,12 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ContentPaste
+import androidx.compose.material.icons.filled.DeleteSweep
 import androidx.compose.material.icons.filled.VerticalSplit
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
@@ -43,23 +46,24 @@ fun TerminalView(vm: TerminalViewModel = viewModel()) {
     }
 
     Column(modifier = Modifier.fillMaxSize()) {
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+        Row(modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surface), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
             ScrollableTabRow(
                 selectedTabIndex = selectedTabIndex,
                 edgePadding = 0.dp,
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f),
+                containerColor = Color.Transparent
             ) {
                 tabs.forEachIndexed { index, tab ->
                     Tab(
                         selected = selectedTabIndex == index,
                         onClick = { selectedTabIndex = index },
-                        text = { Text(tab.title) }
+                        text = { Text(tab.title, fontSize = 12.sp) }
                     )
                 }
             }
             Row {
                 IconButton(onClick = { isSplitScreen = !isSplitScreen }) {
-                    Icon(Icons.Default.VerticalSplit, contentDescription = "Split Screen", tint = if (isSplitScreen) Color.Green else Color.Gray)
+                    Icon(Icons.Default.VerticalSplit, contentDescription = "Split", tint = if (isSplitScreen) Color.Green else Color.Gray, modifier = Modifier.size(20.dp))
                 }
                 IconButton(onClick = {
                     val newId = nextTabId++
@@ -67,19 +71,18 @@ fun TerminalView(vm: TerminalViewModel = viewModel()) {
                     vm.startSession(newId)
                     selectedTabIndex = tabs.size - 1
                 }) {
-                    Icon(Icons.Default.Add, contentDescription = "Add Tab")
+                    Icon(Icons.Default.Add, contentDescription = "Add", modifier = Modifier.size(20.dp))
                 }
             }
         }
 
         if (isSplitScreen) {
-            Row(modifier = Modifier.fillMaxSize()) {
+            Column(modifier = Modifier.fillMaxSize()) {
                 Box(modifier = Modifier.weight(1f)) {
                     TerminalSession(tabs[selectedTabIndex], vm)
                 }
-                Divider(modifier = Modifier.fillMaxHeight().width(1.dp), color = Color.Gray)
+                Divider(modifier = Modifier.fillMaxWidth().height(1.dp), color = Color.Gray)
                 Box(modifier = Modifier.weight(1f)) {
-                    // Show a secondary session in split screen
                     val secondaryIndex = if (selectedTabIndex + 1 < tabs.size) selectedTabIndex + 1 else 0
                     TerminalSession(tabs[secondaryIndex], vm)
                 }
@@ -97,7 +100,6 @@ fun TerminalSession(tab: TerminalTab, vm: TerminalViewModel) {
     val listState = rememberLazyListState()
     val clipboardManager = LocalClipboardManager.current
 
-    // Auto-scroll to bottom on new output
     LaunchedEffect(history.size) {
         if (history.isNotEmpty()) {
             listState.animateScrollToItem(history.size - 1)
@@ -108,33 +110,43 @@ fun TerminalSession(tab: TerminalTab, vm: TerminalViewModel) {
         modifier = Modifier
             .fillMaxSize()
             .background(Color.Black)
-            .padding(8.dp)
-            .pointerInput(Unit) {
-                detectTapGestures(
-                    onLongPress = {
-                        // Copy entire history to clipboard on long press
-                        val fullText = history.joinToString("\n")
-                        clipboardManager.setText(AnnotatedString(fullText))
-                    }
-                )
-            }
+            .padding(4.dp)
     ) {
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+            IconButton(onClick = {
+                val text = clipboardManager.getText()?.text ?: ""
+                inputText += text
+            }, modifier = Modifier.size(32.dp)) {
+                Icon(Icons.Default.ContentPaste, contentDescription = "Paste", tint = Color.Gray, modifier = Modifier.size(16.dp))
+            }
+            IconButton(onClick = { vm.sendCommand(tab.id, "clear") }, modifier = Modifier.size(32.dp)) {
+                Icon(Icons.Default.DeleteSweep, contentDescription = "Clear", tint = Color.Gray, modifier = Modifier.size(16.dp))
+            }
+        }
+
         LazyColumn(
             state = listState,
             modifier = Modifier
                 .weight(1f)
                 .fillMaxWidth()
+                .pointerInput(Unit) {
+                    detectTapGestures(
+                        onLongPress = {
+                            val fullText = history.joinToString("\n")
+                            clipboardManager.setText(AnnotatedString(fullText))
+                        }
+                    )
+                }
         ) {
             items(history) { line ->
                 Text(
                     text = line,
-                    color = Color.Green,
+                    color = MaterialTheme.colorScheme.onBackground,
                     fontFamily = FontFamily.Monospace,
-                    fontSize = 12.sp,
+                    fontSize = 11.sp,
                     modifier = Modifier.pointerInput(Unit) {
                         detectTapGestures(
                             onTap = {
-                                // Copy single line to clipboard
                                 clipboardManager.setText(AnnotatedString(line))
                             }
                         )
@@ -146,13 +158,14 @@ fun TerminalSession(tab: TerminalTab, vm: TerminalViewModel) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = 4.dp)
+                .padding(top = 4.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
                 text = "root@ubuntu:~# ",
                 color = Color.Cyan,
                 fontFamily = FontFamily.Monospace,
-                fontSize = 12.sp
+                fontSize = 11.sp
             )
             BasicTextField(
                 value = inputText,
@@ -161,7 +174,7 @@ fun TerminalSession(tab: TerminalTab, vm: TerminalViewModel) {
                 textStyle = TextStyle(
                     color = Color.White,
                     fontFamily = FontFamily.Monospace,
-                    fontSize = 12.sp
+                    fontSize = 11.sp
                 ),
                 cursorBrush = SolidColor(Color.Green),
                 singleLine = true,

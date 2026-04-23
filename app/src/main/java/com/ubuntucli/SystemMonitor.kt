@@ -29,4 +29,18 @@ class SystemMonitor {
             "Uptime: Unknown"
         }
     }
+
+    fun getRunningProcesses(): List<String> {
+        return try {
+            val procDir = File("/proc")
+            procDir.listFiles { f -> f.isDirectory && f.name.all { it.isDigit() } }
+                ?.take(10)
+                ?.map { pidDir ->
+                    val name = File(pidDir, "comm").readText().trim()
+                    "PID ${pidDir.name}: $name"
+                } ?: emptyList()
+        } catch (e: Exception) {
+            listOf("Error reading processes")
+        }
+    }
 }

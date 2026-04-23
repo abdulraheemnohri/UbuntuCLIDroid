@@ -1,7 +1,11 @@
 .gradle/
 build/
 app/build/
+app/.cxx/
+.cxx/
 *.iml
 .idea/
 local.properties
 .DS_Store
+*.apk
+build_output.log
