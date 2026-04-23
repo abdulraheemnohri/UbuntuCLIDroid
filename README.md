@@ -1,59 +1,49 @@
 # UbuntuCLI Droid
 
-🚀 **UbuntuCLI Droid** is a modern, feature-rich Android terminal emulator and Ubuntu Linux environment runner. It provides a production-grade Linux experience on Android using `proot`, with advanced UI capabilities and AI-powered command assistance.
+🚀 **UbuntuCLI Droid** is a high-performance terminal emulator and Ubuntu Linux environment for Android. It provides a production-grade experience for developers, running a real Ubuntu rootfs via `proot`.
 
-## ✨ Features
+## ✨ Key Features
 
-- **🐧 Real Ubuntu Environment**: Run a full Ubuntu 22.04 LTS (ARM64) rootfs without root access.
-- **🖥️ Advanced Terminal**:
-  - Multi-tab session management.
-  - **Split-screen** mode for multitasking.
-  - Interactive PTY-based execution.
-  - Scrollback buffer and auto-scrolling.
-  - Copy/Paste support via tap and long-press.
-- **🧠 AI CLI Mode**: Integrated AI engine for command suggestions and error troubleshooting.
-- **🔌 Plugin System**: Load and run custom shell scripts from the `plugins/` directory.
-- **📦 Package Manager**: Simple UI interface for `apt` operations.
-- **📂 File Bridge**: Direct access to Android `/sdcard` storage from within the Linux environment.
-- **📊 System Monitor**: Real-time monitoring of CPU, Memory, Uptime, and active processes.
-- **🎨 Customization**: Hacker-themed UI with multiple color schemes (Green, Amber, White).
-- **🔐 Security**: Optional App PIN lock for securing your terminal sessions.
+- **🐧 Ubuntu Environment**: Full ARM64 Ubuntu support without root access.
+- **🖥️ Advanced Terminal**: PTY-based interactive shell with multi-tab support.
+- **📦 Package Management**: Integrated UI for `apt` operations and package discovery.
+- **📂 File Manager**: Browse and manage `/root`, `/sdcard`, and system paths.
+- **🔌 Plugin System**: Auto-loading shell-based plugins for extensibility.
+- **📊 System Monitor**: Real-time CPU and Memory tracking within the app.
+- **🎨 Modern UI**: Built with Jetpack Compose, supporting hacker-themed aesthetics.
 
 ## 🏗️ Tech Stack
-- **Frontend**: Kotlin & Jetpack Compose
-- **Backend/Native**: C++/NDK for Pseudo-terminal (PTY) management.
-- **Runtime**: `proot` for user-space root emulation.
-- **CI/CD**: GitHub Actions for automated Debug APK generation.
+- **Kotlin & Jetpack Compose**: Modern Android frontend.
+- **C++ (NDK)**: Native Pseudo-terminal (PTY) and process management.
+- **proot**: User-space implementation of `chroot`, `mount`, and `id`.
 
 ## 🚀 Getting Started
 
-### 1. Build & Install
-1. Open the project in **Android Studio**.
-2. Sync Gradle and ensure NDK/CMake are installed.
-3. Run `./gradlew assembleDebug` or use the GitHub Actions artifact.
-4. Install the generated APK on an ARM64 device.
+### Prerequisites
+- Android Studio Jellyfish or later.
+- Android NDK and CMake installed via SDK Manager.
 
-### 2. Setup Ubuntu
-1. Launch the app and open a Terminal tab.
-2. Run the installation script:
-   ```bash
-   bash scripts/install.sh
-   ```
-3. Once finished, enter the environment:
-   ```bash
-   bash scripts/start.sh
-   ```
+### Building
+1. Clone the repository.
+2. Open in Android Studio.
+3. Sync Gradle and build the `:app` module.
+4. Run on an ARM64 Android device.
 
-## 📁 Project Structure
-- `app/src/main/java`: Core Kotlin logic and Compose UI.
-- `app/src/main/cpp`: Native PTY and process management.
-- `scripts/`: Essential shell scripts for environment setup.
-- `.github/workflows/`: CI configuration.
+### Initial Setup
+1. Open the Terminal tab.
+2. Run `bash scripts/install.sh` to download and extract the Ubuntu rootfs.
+3. Use `bash scripts/start.sh` to enter the environment.
 
-## 📈 Roadmap
-- [ ] SSH Server integration.
-- [ ] X11/VNC support for graphical Linux apps.
-- [ ] Cloud-synced configurations.
+## 📁 Project Layout
+- `app/src/main/cpp`: Native PTY and JNI logic.
+- `app/src/main/java/com/ubuntucli`: Core application logic and UI.
+- `scripts/`: Essential environment management scripts.
+- `core/`: Architectural foundations for terminal and sessions.
+
+## 🔐 Security
+- Fully sandboxed execution.
+- No root permissions required for core operations.
+- Optional PIN and biometric lock for app access.
 
 ---
-*Developed for the Linux enthusiasts and Android power users.*
+*Built for the portable developer workstation of the future.*
