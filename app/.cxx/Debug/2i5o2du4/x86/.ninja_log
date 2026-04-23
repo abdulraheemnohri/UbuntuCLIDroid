@@ -1,0 +1,11 @@
+# ninja log v5
+0	60	1776920312565023566	CMakeFiles/ubuntucli.dir/exec.cpp.o	427005f2f63c9730
+0	323	1776920312825023563	CMakeFiles/ubuntucli.dir/terminal.cpp.o	18f65d5c75744373
+0	346	1776920312849023563	CMakeFiles/ubuntucli.dir/pty.cpp.o	7a06e6fd8c003f6c
+346	400	1776920312901023562	/app/app/build/intermediates/cxx/Debug/2i5o2du4/obj/x86/libubuntucli.so	17cd75df5f5e6ab
+0	5	0	clean	2d2f43cf2094d251
+7	85	1776920708697019106	CMakeFiles/ubuntucli.dir/exec.cpp.o	427005f2f63c9730
+1	362	1776920708973019103	CMakeFiles/ubuntucli.dir/pty.cpp.o	7a06e6fd8c003f6c
+3	405	1776920709013019103	CMakeFiles/ubuntucli.dir/terminal.cpp.o	18f65d5c75744373
+406	439	1776920709049019102	/app/app/build/intermediates/cxx/Debug/2i5o2du4/obj/x86/libubuntucli.so	17cd75df5f5e6ab
+0	5	0	clean	2d2f43cf2094d251

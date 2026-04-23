@@ -1,0 +1,3 @@
+/app/app/.cxx/Debug/2i5o2du4/x86_64/CMakeFiles/ubuntucli.dir
+/app/app/.cxx/Debug/2i5o2du4/x86_64/CMakeFiles/edit_cache.dir
+/app/app/.cxx/Debug/2i5o2du4/x86_64/CMakeFiles/rebuild_cache.dir
