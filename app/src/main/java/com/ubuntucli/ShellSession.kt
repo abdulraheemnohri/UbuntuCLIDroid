@@ -1,11 +1,7 @@
 package com.ubuntucli
 
 import android.util.Log
-import java.io.FileDescriptor
-import java.io.FileInputStream
-import java.io.FileOutputStream
-import java.io.InputStream
-import java.io.OutputStream
+import java.io.*
 import java.lang.reflect.Field
 
 class ShellSession {
@@ -21,6 +17,8 @@ class ShellSession {
     }
 
     private external fun createPty(shellPath: String, args: Array<String>, envp: Array<String>, pProcessId: IntArray): Int
+    private external fun setPtyWindowSize(fd: Int, rows: Int, cols: Int)
+    private external fun terminateProcess(pid: Int)
     external fun waitFor(pid: Int): Int
 
     fun startSession(shellPath: String, args: Array<String>, envp: Array<String>) {
@@ -43,5 +41,21 @@ class ShellSession {
                 Log.e("ShellSession", "Failed to create streams", e)
             }
         }
+    }
+
+    fun updateWindowSize(rows: Int, cols: Int) {
+        if (ptyFd != -1) {
+            setPtyWindowSize(ptyFd, rows, cols)
+        }
+    }
+
+    fun stopSession() {
+        if (processId != -1) {
+            terminateProcess(processId)
+        }
+        try {
+            inputStream?.close()
+            outputStream?.close()
+        } catch (e: Exception) {}
     }
 }
