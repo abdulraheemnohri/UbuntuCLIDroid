@@ -1,0 +1,36 @@
+#!/bin/bash
+
+COMMAND=$1
+SHIFT_ARGS=${@:2}
+
+case "$COMMAND" in
+    plugin)
+        SUBCOMMAND=$2
+        case "$SUBCOMMAND" in
+            list)
+                ls /home/ubuntu/plugins/*.sh 2>/dev/null | xargs -n 1 basename
+                ;;
+            run)
+                PLUGIN_NAME=$3
+                if [ -f "/home/ubuntu/plugins/$PLUGIN_NAME.sh" ]; then
+                    bash "/home/ubuntu/plugins/$PLUGIN_NAME.sh" "${@:4}"
+                else
+                    echo "Plugin not found: $PLUGIN_NAME"
+                fi
+                ;;
+            *)
+                echo "Usage: ubuntu plugin [list|run <name>]"
+                ;;
+        esac
+        ;;
+    ai)
+        ubuntu-ai "$SHIFT_ARGS"
+        ;;
+    info)
+        echo "UbuntuCLI Droid v1.0"
+        echo "Environment: Ubuntu 20.04 LTS"
+        ;;
+    *)
+        echo "Usage: ubuntu [plugin|ai|info]"
+        ;;
+esac

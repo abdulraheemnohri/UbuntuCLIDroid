@@ -1,9 +1,10 @@
 package com.ubuntucli
 
-import android.os.Bundle
 import android.content.Context
-import androidx.activity.ComponentActivity
+import android.os.Bundle
 import androidx.activity.compose.setContent
+import androidx.appcompat.app.AppCompatActivity
+import androidx.biometric.BiometricPrompt
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -19,26 +20,26 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.ubuntucli.terminal.TerminalViewModel
-import com.ubuntucli.terminal.TerminalView
-import com.ubuntucli.ui.Theme
-import com.ubuntucli.system.SystemMonitor
-import com.ubuntucli.system.ProcessInfo
-import com.ubuntucli.`package`.PackageManager
 import com.ubuntucli.core.SystemInitializer
 import com.ubuntucli.filemanager.FileManager
+import com.ubuntucli.monitor.ProcessInfo
+import com.ubuntucli.monitor.SystemMonitor
+import com.ubuntucli.apkg.PackageManager
 import com.ubuntucli.settings.SettingsManager
-import java.io.File
+import com.ubuntucli.terminal.*
+import com.ubuntucli.ui.Theme
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import java.io.File
 
-class MainActivity : ComponentActivity() {
-    @OptIn(ExperimentalMaterial3Api::class)
+class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         val initializer = SystemInitializer(this)
+        val sm = SettingsManager(this)
 
         setContent {
             val vm: TerminalViewModel = viewModel()
@@ -46,66 +47,95 @@ class MainActivity : ComponentActivity() {
             var isInitialized by remember { mutableStateOf(initializer.isInitialized()) }
             var initStatus by remember { mutableStateOf("Checking DNA layer...") }
             var hasError by remember { mutableStateOf(false) }
+            var isAuthenticated by remember { mutableStateOf(!sm.biometricEnabled.value) }
             val scope = rememberCoroutineScope()
 
-            Theme {
+            Theme(theme = sm.theme.value) {
                 if (!isInitialized) {
-                    Column(
-                        modifier = Modifier.fillMaxSize().background(Color.Black).padding(16.dp),
-                        verticalArrangement = Arrangement.Center,
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        if (!hasError) {
-                            CircularProgressIndicator(color = Color.Green)
-                        } else {
-                            Icon(Icons.Default.Error, null, tint = Color.Red, modifier = Modifier.size(48.dp))
-                        }
-                        Spacer(Modifier.height(16.dp))
-                        Text("UbuntuCLI Droid", style = MaterialTheme.typography.headlineMedium, color = Color.Green)
-                        Spacer(Modifier.height(8.dp))
-                        Text(
-                            text = initStatus,
-                            color = if (hasError) Color.Red else Color.White,
-                            fontFamily = FontFamily.Monospace,
-                            fontSize = 12.sp
-                        )
-
-                        if (hasError) {
-                            Spacer(Modifier.height(24.dp))
-                            Button(onClick = {
-                                hasError = false
-                                initStatus = "Retrying DNA check..."
-                                scope.launch {
-                                    try {
-                                        initializer.initialize { initStatus = it }
-                                        isInitialized = true
-                                    } catch (e: Exception) {
-                                        hasError = true
-                                        initStatus = "Error: ${e.message}"
-                                    }
-                                }
-                            }) {
-                                Text("Retry Initialization")
+                    InitializationScreen(initStatus, hasError, onRetry = {
+                        hasError = false
+                        scope.launch {
+                            try {
+                                initializer.initialize { initStatus = it }
+                                isInitialized = true
+                            } catch (e: Exception) {
+                                hasError = true
+                                initStatus = "Error: ${e.message}"
                             }
                         }
+                    })
 
-                        LaunchedEffect(Unit) {
-                            if (!isInitialized) {
-                                try {
-                                    initializer.initialize { initStatus = it }
-                                    isInitialized = true
-                                } catch (e: Exception) {
-                                    hasError = true
-                                    initStatus = "Error: ${e.message}"
-                                }
-                            }
+                    LaunchedEffect(Unit) {
+                        try {
+                            initializer.initialize { initStatus = it }
+                            isInitialized = true
+                        } catch (e: Exception) {
+                            hasError = true
+                            initStatus = "Error: ${e.message}"
                         }
                     }
+                } else if (!isAuthenticated) {
+                    AuthScreen { showBiometricPrompt { isAuthenticated = true } }
                 } else {
                     MainScaffold(currentScreen, { currentScreen = it }, vm, this@MainActivity)
                 }
             }
         }
+    }
+
+    private fun showBiometricPrompt(onSuccess: () -> Unit) {
+        val executor = ContextCompat.getMainExecutor(this)
+        val biometricPrompt = BiometricPrompt(this, executor, object : BiometricPrompt.AuthenticationCallback() {
+            override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
+                super.onAuthenticationSucceeded(result)
+                onSuccess()
+            }
+        })
+
+        val promptInfo = BiometricPrompt.PromptInfo.Builder()
+            .setTitle("UbuntuCLI Droid Secure Access")
+            .setSubtitle("Authenticate to access your Linux environment")
+            .setNegativeButtonText("Cancel")
+            .build()
+
+        biometricPrompt.authenticate(promptInfo)
+    }
+}
+
+@Composable
+fun InitializationScreen(status: String, hasError: Boolean, onRetry: () -> Unit) {
+    Column(
+        modifier = Modifier.fillMaxSize().background(Color.Black).padding(16.dp),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        if (!hasError) CircularProgressIndicator(color = Color.Green)
+        else Icon(Icons.Default.Error, null, tint = Color.Red, modifier = Modifier.size(48.dp))
+
+        Spacer(Modifier.height(16.dp))
+        Text("UbuntuCLI Droid", style = MaterialTheme.typography.headlineMedium, color = Color.Green)
+        Spacer(Modifier.height(8.dp))
+        Text(text = status, color = if (hasError) Color.Red else Color.White, fontFamily = FontFamily.Monospace, fontSize = 12.sp)
+
+        if (hasError) {
+            Spacer(Modifier.height(24.dp))
+            Button(onClick = onRetry) { Text("Retry Initialization") }
+        }
+    }
+}
+
+@Composable
+fun AuthScreen(onAuthRequest: () -> Unit) {
+    Column(
+        modifier = Modifier.fillMaxSize().background(Color.Black),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Icon(Icons.Default.Lock, null, tint = Color.Green, modifier = Modifier.size(64.dp))
+        Spacer(Modifier.height(24.dp))
+        Button(onClick = onAuthRequest) { Text("Unlock Environment") }
+
+        LaunchedEffect(Unit) { onAuthRequest() }
     }
 }
 
@@ -115,36 +145,20 @@ fun MainScaffold(currentScreen: String, onScreenChange: (String) -> Unit, vm: Te
     Scaffold(
         bottomBar = {
             NavigationBar {
-                NavigationBarItem(
-                    icon = { Icon(Icons.Default.Terminal, "Term") },
-                    label = { Text("Terminal") },
-                    selected = currentScreen == "terminal",
-                    onClick = { onScreenChange("terminal") }
-                )
-                NavigationBarItem(
-                    icon = { Icon(Icons.Default.Inventory, "Pkgs") },
-                    label = { Text("Packages") },
-                    selected = currentScreen == "packages",
-                    onClick = { onScreenChange("packages") }
-                )
-                NavigationBarItem(
-                    icon = { Icon(Icons.Default.Folder, "Files") },
-                    label = { Text("Files") },
-                    selected = currentScreen == "files",
-                    onClick = { onScreenChange("files") }
-                )
-                NavigationBarItem(
-                    icon = { Icon(Icons.Default.MonitorHeart, "Mon") },
-                    label = { Text("Monitor") },
-                    selected = currentScreen == "monitor",
-                    onClick = { onScreenChange("monitor") }
-                )
-                NavigationBarItem(
-                    icon = { Icon(Icons.Default.Settings, "Set") },
-                    label = { Text("Settings") },
-                    selected = currentScreen == "settings",
-                    onClick = { onScreenChange("settings") }
-                )
+                listOf(
+                    Triple("terminal", Icons.Default.Terminal, "Term"),
+                    Triple("packages", Icons.Default.Inventory, "Pkgs"),
+                    Triple("files", Icons.Default.Folder, "Files"),
+                    Triple("monitor", Icons.Default.MonitorHeart, "Mon"),
+                    Triple("settings", Icons.Default.Settings, "Set")
+                ).forEach { (screen, icon, label) ->
+                    NavigationBarItem(
+                        icon = { Icon(icon, label) },
+                        label = { Text(label) },
+                        selected = currentScreen == screen,
+                        onClick = { onScreenChange(screen) }
+                    )
+                }
             }
         }
     ) { innerPadding ->
@@ -192,7 +206,10 @@ fun FilesScreen() {
             title = { Text("New Folder") },
             text = { TextField(value = newDirName, onValueChange = { newDirName = it }) },
             confirmButton = {
-                Button(onClick = { showDialog = false }) { Text("Create") }
+                Button(onClick = {
+                    fm.createDirectory(File(path, newDirName).absolutePath)
+                    showDialog = false
+                }) { Text("Create") }
             }
         )
     }
@@ -241,6 +258,7 @@ fun MonitorScreen() {
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
         Text("System Monitor", style = MaterialTheme.typography.headlineMedium)
         Spacer(Modifier.height(8.dp))
+        Text("CPU: $cpu", fontSize = 12.sp, color = Color.Green)
         Text("Memory: Total ${mem.first / 1024} MB, Avail ${mem.second / 1024} MB", fontSize = 12.sp)
         Spacer(Modifier.height(16.dp))
         Text("Running Processes:", style = MaterialTheme.typography.titleSmall)
@@ -258,6 +276,11 @@ fun SettingsScreen(context: Context) {
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
         Text("Settings", style = MaterialTheme.typography.headlineMedium)
         Spacer(Modifier.height(16.dp))
+
+        ListItem(headlineContent = { Text("Biometric Lock") }, trailingContent = {
+            Switch(checked = sm.biometricEnabled.value, onCheckedChange = { sm.setBiometricEnabled(it) })
+        })
+
         ListItem(headlineContent = { Text("Font Size") }, trailingContent = {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = { sm.updateFontSize(sm.fontSize.value - 1) }) { Icon(Icons.Default.Remove, null) }
@@ -265,6 +288,13 @@ fun SettingsScreen(context: Context) {
                 IconButton(onClick = { sm.updateFontSize(sm.fontSize.value + 1) }) { Icon(Icons.Default.Add, null) }
             }
         })
-        ListItem(headlineContent = { Text("Default Shell") }, trailingContent = { Text(sm.defaultShell.value) })
+
+        ListItem(headlineContent = { Text("Terminal Theme") }, trailingContent = {
+            Text(sm.theme.value, modifier = Modifier.clickable {
+                val themes = listOf("Hacker", "Amber", "White")
+                val next = themes[(themes.indexOf(sm.theme.value) + 1) % themes.size]
+                sm.setTheme(next)
+            })
+        })
     }
 }
