@@ -3,12 +3,16 @@ package com.ubuntucli.terminal
 import android.app.Application
 import androidx.compose.runtime.mutableStateListOf
 import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.viewModelScope
+import com.ubuntucli.ai.AIEngine
+import kotlinx.coroutines.launch
 import java.io.File
 
 class TerminalViewModel(application: Application) : AndroidViewModel(application) {
     val sessions = mutableStateListOf<TerminalSession>()
     val outputs = mutableMapOf<Int, MutableList<String>>()
-    private val historyDir = File(application.filesDir, "history")
+    private val historyDir = File(getApplication<Application>().filesDir, "history")
+    val aiEngine = AIEngine(getApplication())
 
     init {
         if (!historyDir.exists()) historyDir.mkdirs()
@@ -38,8 +42,12 @@ class TerminalViewModel(application: Application) : AndroidViewModel(application
         }
 
         sessions.add(session)
-        // Production: points to the Ubuntu proot entry
-        session.start("/system/bin/sh", arrayOf("-"), emptyArray())
+
+        // Use the start script if it exists, otherwise fallback to sh
+        val startScript = File(getApplication<Application>().filesDir, "ubuntu/bin/sh")
+        val shellPath = if (startScript.exists()) startScript.absolutePath else "/system/bin/sh"
+
+        session.start(shellPath, arrayOf("-l"), emptyArray())
     }
 
     private fun saveHistory(id: Int, history: List<String>) {
@@ -50,11 +58,10 @@ class TerminalViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun sendCommand(id: Int, command: String) {
-        val history = tabHistories[id] ?: return
+        val history = outputs[id] ?: return
 
         if (command == "clear") {
             history.clear()
-            history.add("Console cleared.")
             return
         }
 
@@ -62,8 +69,12 @@ class TerminalViewModel(application: Application) : AndroidViewModel(application
         session?.write(command + "\n")
     }
 
-    // Proxy for UI to access history
-    val tabHistories: Map<Int, MutableList<String>> get() = outputs
+    fun requestAiSuggestion(sessionId: Int, prompt: String) {
+        viewModelScope.launch {
+            val suggestion = aiEngine.getCommandSuggestion(prompt)
+            outputs[sessionId]?.add("\n[AI Suggestion]: $suggestion\n")
+        }
+    }
 
     override fun onCleared() {
         sessions.forEach { it.stop() }

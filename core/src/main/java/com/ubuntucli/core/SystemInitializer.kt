@@ -14,87 +14,96 @@ class SystemInitializer(private val context: Context) {
 
     fun initialize(onProgress: (String) -> Unit) {
         try {
-            onProgress("Checking DNA layer...")
+            onProgress("Starting System Bootstrap...")
 
-            onProgress("Extracting RootFS...")
-            extractRootFS()
+            if (!ubuntuDir.exists()) {
+                ubuntuDir.mkdirs()
+            }
 
-            onProgress("Applying System Configs...")
+            onProgress("Extracting Ubuntu Runtime...")
+            extractAsset("ubuntu-rootfs.tar.gz", context.filesDir)
+
+            val tarFile = File(context.filesDir, "ubuntu-rootfs.tar.gz")
+            if (tarFile.exists()) {
+                onProgress("Unpacking DNA Layers...")
+                unpackTar(tarFile, ubuntuDir)
+                tarFile.delete()
+            }
+
+            onProgress("Configuring Environment...")
             copyAssetsRecursive("default-config", ubuntuDir)
 
-            onProgress("Initializing Boot Sequence...")
+            // Create essential directories if they don't exist
+            File(ubuntuDir, "dev").mkdirs()
+            File(ubuntuDir, "proc").mkdirs()
+            File(ubuntuDir, "sys").mkdirs()
+            File(ubuntuDir, "tmp").mkdirs()
+            File(ubuntuDir, "home/ubuntu").mkdirs()
+
+            onProgress("Sealing System...")
             initializedFile.createNewFile()
-            onProgress("System Ready.")
+            onProgress("UbuntuCLI Droid Ready.")
         } catch (e: Exception) {
-            val errorMsg = "System Error: ${e.javaClass.simpleName} - ${e.message}"
-            Log.e("SystemInitializer", errorMsg, e)
-            onProgress(errorMsg)
+            Log.e("SystemInitializer", "Bootstrap failed", e)
             throw e
         }
     }
 
-    private fun extractRootFS() {
-        val assetName = "ubuntu-rootfs.tar.gz"
-        val outFile = File(context.filesDir, "ubuntu_tmp.tar.gz")
-
-        try {
-            context.assets.open(assetName).use { ins ->
-                FileOutputStream(outFile).use { outs ->
-                    ins.copyTo(outs)
-                }
+    private fun extractAsset(assetName: String, targetDir: File) {
+        val outFile = File(targetDir, assetName)
+        context.assets.open(assetName).use { input ->
+            FileOutputStream(outFile).use { output ->
+                input.copyTo(output)
             }
-        } catch (e: Exception) {
-            throw Exception("Failed to open asset $assetName: ${e.message}")
         }
-
-        if (!ubuntuDir.exists()) ubuntuDir.mkdirs()
-
-        val process = ProcessBuilder("tar", "-xzf", outFile.absolutePath, "-C", ubuntuDir.absolutePath)
-            .redirectErrorStream(true)
-            .start()
-
-        val exitCode = process.waitFor()
-        if (exitCode != 0) {
-            val errorOutput = process.inputStream.bufferedReader().readText()
-            throw Exception("Extraction failed ($exitCode): $errorOutput")
-        }
-
-        outFile.delete()
     }
 
-    private fun copyAssetsRecursive(assetPath: String, targetDir: File) {
-        val assets = context.assets.list(assetPath) ?: return
+    private fun unpackTar(tarFile: File, destDir: File) {
+        val process = ProcessBuilder("tar", "-xzf", tarFile.absolutePath, "-C", destDir.absolutePath)
+            .redirectErrorStream(true)
+            .start()
+        val exitCode = process.waitFor()
+        if (exitCode != 0) {
+            val error = process.inputStream.bufferedReader().readText()
+            throw Exception("Tar extraction failed with code $exitCode: $error")
+        }
+    }
+
+    private fun copyAssetsRecursive(path: String, targetDir: File) {
+        val assets = context.assets.list(path) ?: return
         if (assets.isEmpty()) {
-            // Might be a file
+            // It might be a file
+            val file = File(targetDir, path.substringAfterLast("/"))
             try {
-                copyFileFromAsset(assetPath, targetDir)
-            } catch (e: Exception) {}
+                context.assets.open(path).use { input ->
+                    FileOutputStream(file).use { output ->
+                        input.copyTo(output)
+                    }
+                }
+            } catch (e: Exception) {
+                // Not a file or can't open
+            }
             return
         }
 
         for (asset in assets) {
-            val subAssetPath = "$assetPath/$asset"
-            val subAssets = context.assets.list(subAssetPath)
-            val subTargetFile = File(targetDir, asset)
+            val fullPath = if (path.isEmpty()) asset else "$path/$asset"
+            val subAssets = context.assets.list(fullPath)
+            val destFile = File(targetDir, asset)
 
             if (subAssets.isNullOrEmpty()) {
-                subTargetFile.parentFile?.mkdirs()
-                copyFileFromAsset(subAssetPath, subTargetFile)
+                destFile.parentFile?.mkdirs()
+                try {
+                    context.assets.open(fullPath).use { input ->
+                        FileOutputStream(destFile).use { output ->
+                            input.copyTo(output)
+                        }
+                    }
+                } catch (e: Exception) {}
             } else {
-                copyAssetsRecursive(subAssetPath, subTargetFile)
+                destFile.mkdirs()
+                copyAssetsRecursive(fullPath, destFile)
             }
-        }
-    }
-
-    private fun copyFileFromAsset(assetPath: String, targetFile: File) {
-        try {
-            context.assets.open(assetPath).use { input ->
-                FileOutputStream(targetFile).use { output ->
-                    input.copyTo(output)
-                }
-            }
-        } catch (e: Exception) {
-            // It was a directory, assets.list returned empty but open failed
         }
     }
 }

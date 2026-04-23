@@ -1,6 +1,6 @@
 package com.ubuntucli
 
-import com.ubuntucli.`package`.PackageManager
+import com.ubuntucli.apkg.PackageManager
 import org.junit.Test
 import org.junit.Assert.*
 

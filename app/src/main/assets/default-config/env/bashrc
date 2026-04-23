@@ -1,5 +1,15 @@
-export TERM=xterm-256color
+# UbuntuCLI Droid .bashrc
 export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
-alias ll='ls -la'
-alias update='apt update && apt upgrade -y'
-echo "[UbuntuCLI Droid Ready]"
+export TERM=xterm-256color
+export HOME=/home/ubuntu
+export PS1='\[\033[01;32m\]ubuntu@droid\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]$ '
+
+alias ls='ls --color=auto'
+alias ll='ls -alF'
+alias la='ls -A'
+alias l='ls -CF'
+
+# AI Integration
+ubuntu-ai() {
+    /usr/local/bin/ubuntu-ai "$@"
+}

@@ -1,0 +1,6 @@
+#!/bin/bash
+# Mock AI script for now
+echo "Processing AI request: $*"
+echo "Thinking..."
+sleep 1
+echo "AI Response: I am UbuntuCLI Droid AI. How can I help you with your terminal today?"

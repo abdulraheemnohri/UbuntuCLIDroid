@@ -25,6 +25,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.ubuntucli.settings.SettingsManager
 
 @Composable
 fun TerminalView(vm: TerminalViewModel) {
@@ -56,7 +57,7 @@ fun TerminalView(vm: TerminalViewModel) {
             }
             Row {
                 IconButton(onClick = { isSplitScreen = !isSplitScreen }) {
-                    Icon(Icons.Default.VerticalSplit, "Split", tint = if (isSplitScreen) Color.Green else Color.Gray)
+                    Icon(Icons.Default.VerticalSplit, "Split", tint = if (isSplitScreen) MaterialTheme.colorScheme.primary else Color.Gray)
                 }
                 IconButton(onClick = { vm.createSession() }) {
                     Icon(Icons.Default.Add, "New")
@@ -67,7 +68,7 @@ fun TerminalView(vm: TerminalViewModel) {
         if (isSplitScreen && vm.sessions.size >= 2) {
             Column(modifier = Modifier.fillMaxSize()) {
                 Box(modifier = Modifier.weight(1f)) {
-                    TerminalSessionScreen(vm.sessions[selectedSessionId], vm)
+                    TerminalSessionScreen(vm.sessions.getOrElse(selectedSessionId) { vm.sessions.first() }, vm)
                 }
                 Divider(color = Color.Gray, thickness = 1.dp)
                 Box(modifier = Modifier.weight(1f)) {
@@ -87,6 +88,7 @@ fun TerminalSessionScreen(session: TerminalSession, vm: TerminalViewModel) {
     val history = vm.outputs[session.id] ?: emptyList<String>()
     val listState = rememberLazyListState()
     val clipboard = LocalClipboardManager.current
+    val sm = SettingsManager(androidx.compose.ui.platform.LocalContext.current)
 
     LaunchedEffect(history.size) {
         if (history.isNotEmpty()) listState.animateScrollToItem(history.size - 1)
@@ -94,6 +96,11 @@ fun TerminalSessionScreen(session: TerminalSession, vm: TerminalViewModel) {
 
     Column(modifier = Modifier.fillMaxSize().padding(4.dp)) {
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+            IconButton(onClick = {
+                vm.requestAiSuggestion(session.id, history.lastOrNull() ?: "")
+            }, modifier = Modifier.size(24.dp)) {
+                Icon(Icons.Default.Psychology, "AI", modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.primary)
+            }
             IconButton(onClick = { input += clipboard.getText()?.text ?: "" }, modifier = Modifier.size(24.dp)) {
                 Icon(Icons.Default.ContentPaste, null, modifier = Modifier.size(16.dp), tint = Color.Gray)
             }
@@ -114,7 +121,8 @@ fun TerminalSessionScreen(session: TerminalSession, vm: TerminalViewModel) {
                 Text(
                     text = AnsiParser.parse(line),
                     fontFamily = FontFamily.Monospace,
-                    fontSize = 11.sp,
+                    fontSize = sm.fontSize.value.sp,
+                    color = if (line.contains("[AI Suggestion]")) MaterialTheme.colorScheme.primary else Color.White,
                     modifier = Modifier.pointerInput(Unit) {
                         detectTapGestures(onTap = { clipboard.setText(AnnotatedString(line)) })
                     }
@@ -136,13 +144,13 @@ fun TerminalSessionScreen(session: TerminalSession, vm: TerminalViewModel) {
         }
 
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Text("$ ", color = Color.Cyan, fontFamily = FontFamily.Monospace, fontSize = 12.sp)
+            Text("$ ", color = MaterialTheme.colorScheme.primary, fontFamily = FontFamily.Monospace, fontSize = sm.fontSize.value.sp)
             BasicTextField(
                 value = input,
                 onValueChange = { input = it },
                 modifier = Modifier.fillMaxWidth(),
-                textStyle = TextStyle(color = Color.White, fontFamily = FontFamily.Monospace, fontSize = 12.sp),
-                cursorBrush = SolidColor(Color.Green),
+                textStyle = TextStyle(color = Color.White, fontFamily = FontFamily.Monospace, fontSize = sm.fontSize.value.sp),
+                cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                 keyboardActions = KeyboardActions(onDone = {
                     if (input.isNotBlank()) {
@@ -176,7 +184,7 @@ fun VirtualKeys(onKey: (String) -> Unit) {
                     contentPadding = PaddingValues(0.dp),
                     modifier = Modifier.height(28.dp).width(48.dp)
                 ) {
-                    Text(key, fontSize = 9.sp, color = Color.Green)
+                    Text(key, fontSize = 9.sp, color = MaterialTheme.colorScheme.primary)
                 }
             }
         }

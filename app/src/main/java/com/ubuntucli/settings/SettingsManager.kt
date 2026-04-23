@@ -6,34 +6,23 @@ import androidx.compose.runtime.mutableStateOf
 class SettingsManager(context: Context) {
     private val prefs = context.getSharedPreferences("ubuntu_settings", Context.MODE_PRIVATE)
 
-    var fontSize = mutableStateOf(prefs.getInt("font_size", 12))
-    var theme = mutableStateOf(prefs.getString("theme", "Dracula") ?: "Dracula")
-    var pinLockEnabled = mutableStateOf(prefs.getBoolean("pin_lock", false))
-    var defaultShell = mutableStateOf(prefs.getString("default_shell", "/bin/bash") ?: "/bin/bash")
-    var scrollbackSize = mutableStateOf(prefs.getInt("scrollback_size", 10000))
+    val fontSize = mutableStateOf(prefs.getInt("font_size", 12))
+    val defaultShell = mutableStateOf(prefs.getString("default_shell", "/bin/bash") ?: "/bin/bash")
+    val biometricEnabled = mutableStateOf(prefs.getBoolean("biometric_enabled", false))
+    val theme = mutableStateOf(prefs.getString("theme", "Hacker") ?: "Hacker")
 
-    fun updateFontSize(newSize: Int) {
-        fontSize.value = newSize
-        prefs.edit().putInt("font_size", newSize).apply()
+    fun updateFontSize(size: Int) {
+        fontSize.value = size
+        prefs.edit().putInt("font_size", size).apply()
     }
 
-    fun updateTheme(newTheme: String) {
+    fun setBiometricEnabled(enabled: Boolean) {
+        biometricEnabled.value = enabled
+        prefs.edit().putBoolean("biometric_enabled", enabled).apply()
+    }
+
+    fun setTheme(newTheme: String) {
         theme.value = newTheme
         prefs.edit().putString("theme", newTheme).apply()
-    }
-
-    fun updateDefaultShell(shell: String) {
-        defaultShell.value = shell
-        prefs.edit().putString("default_shell", shell).apply()
-    }
-
-    fun updateScrollbackSize(size: Int) {
-        scrollbackSize.value = size
-        prefs.edit().putInt("scrollback_size", size).apply()
-    }
-
-    fun updatePinLockEnabled(enabled: Boolean) {
-        pinLockEnabled.value = enabled
-        prefs.edit().putBoolean("pin_lock", enabled).apply()
     }
 }
